@@ -35,14 +35,12 @@ var pong = angular.module('pong', []);
 
 pong.directive('barChart', ['d3Service', function (d3Service) {
 		return {
-			scope: {
-				dataset: '='
-			},
-			template: '<p>{{gameLabel}}</p>',
+			// template: '<p>Add Game:<input ng-model="dataset.games">{{dataset.games}}.</input></p>',
 
 			link: function (scope, element, attrs) {
-				var height = 60;
-				var width = 90;
+
+				var height = attrs['h'];
+				var width = attrs['w'];
 
 				var dataset = [
 					{game_id: 1, wins: 10, losses: 5},
@@ -58,7 +56,7 @@ pong.directive('barChart', ['d3Service', function (d3Service) {
 				d3Service.d3()
 					.then(function (d3) {
 
-						var barWidth = (width / dataset.length) / 2;
+						var barWidth = (width / dataset.length);
 
 						var maxBarHeight = d3.max(dataset, function (game) {
 							return Math.max(game.wins, game.losses);
@@ -83,7 +81,7 @@ pong.directive('barChart', ['d3Service', function (d3Service) {
 								// wins
 								groups.append('rect')
 									.attr('x', function (d, i) {
-										return (i + .5) * barWidth;
+										return i * barWidth;
 									})
 
 									.attr('y', function (d, i) {
@@ -91,7 +89,7 @@ pong.directive('barChart', ['d3Service', function (d3Service) {
 										return y;
 									})
 									.attr('width', function (d, i) {
-										return barWidth;
+										return barWidth / 2;
 									})
 									.attr('height', function (d, i) {
 										var height = d.wins;
@@ -106,14 +104,14 @@ pong.directive('barChart', ['d3Service', function (d3Service) {
 									// losses
 									groups.append('rect')
 										.attr('x', function (d, i) {
-											return i * barWidth;
+											return (i + .5) * barWidth;
 										})
 										.attr('y', function (d, i) {
 											var x = height - barHeightScale(d.losses);
 											return x;
 										})
 										.attr('width', function (d, i) {
-											return barWidth;
+											return barWidth / 2;
 										})
 										.attr('height', function (d, i) {
 											return barHeightScale(d.losses);
@@ -125,7 +123,7 @@ pong.directive('barChart', ['d3Service', function (d3Service) {
 
 					});
 			},
-			restrict: 'EA'
+			restrict: 'A'
 		};
 }]);
 
