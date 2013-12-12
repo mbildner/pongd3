@@ -58,14 +58,15 @@ pong.directive('barChart', ['d3Service', function (d3Service) {
 				d3Service.d3()
 					.then(function (d3) {
 
+						var barWidth = (width / dataset.length) / 2;
+
 						var maxBarHeight = d3.max(dataset, function (game) {
 							return Math.max(game.wins, game.losses);
 						});
 
-
-						var barScale = d3.scale.linear()
-															.domain([0, maxBarHeight])
-															.range([0,height]);
+						var barHeightScale = d3.scale.linear()
+								.domain([0, maxBarHeight])
+								.range([0, height]);
 
 
 						var svg = d3.select(element[0])
@@ -82,20 +83,19 @@ pong.directive('barChart', ['d3Service', function (d3Service) {
 								// wins
 								groups.append('rect')
 									.attr('x', function (d, i) {
-										var barWidth = width / dataset.length;
 										return (i + .5) * barWidth;
 									})
 
 									.attr('y', function (d, i) {
-										var y = height - barScale(d.wins);
+										var y = height - barHeightScale(d.wins);
 										return y;
 									})
 									.attr('width', function (d, i) {
-										return (width / dataset.length) / 2;
+										return barWidth;
 									})
 									.attr('height', function (d, i) {
 										var height = d.wins;
-										var scaledHeight = barScale(height);
+										var scaledHeight = barHeightScale(height);
 										return scaledHeight;
 									})
 									.style('fill', function (d, i) {
@@ -106,17 +106,17 @@ pong.directive('barChart', ['d3Service', function (d3Service) {
 									// losses
 									groups.append('rect')
 										.attr('x', function (d, i) {
-											return i * (width / dataset.length);
+											return i * barWidth;
 										})
 										.attr('y', function (d, i) {
-											var x = height - barScale(d.losses);
+											var x = height - barHeightScale(d.losses);
 											return x;
 										})
 										.attr('width', function (d, i) {
-											return (width / dataset.length) / 2;
+											return barWidth;
 										})
 										.attr('height', function (d, i) {
-											return barScale(d.losses);
+											return barHeightScale(d.losses);
 										})
 										.style('fill', function (d, i) {
 											var color = 'red';
