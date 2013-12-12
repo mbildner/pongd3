@@ -1,58 +1,3 @@
-/*var partialDerp = angular.module('pong', [], function ($provide) {
-	$provide.factory('indexedDBService', ['$q', '$scope', function ($q, $scope) {
-
-	// var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
-	// var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || window.msIDBTransaction;
-	// var IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange || window.msIDBKeyRange;
-
-	// var serviceInstance = {};
-
-	// var open = function (dbname, version) {
-	// 	var database = dbname;
-
-	// 	var handleUpgrade = function (db) {
-	// 		var donorObjectStore = db.createObjectStore("donor", {
-	// 			autoIncrement: true
-	// 		});
-	// 		donorObjectStore.createIndex("name", "ContributorName");
-	// 		donorObjectStore.createIndex("amount", "AggregateContribution");
-	// 		donorObjectStore.createIndex("recipient", "RecipientName");
-	// 	};
-
-	// 	var deferred = $q.defer();
-
-	/ 	var request = indexedDB.open(dbname, version);
-
-	// 	var requestEvents = {};
-	// 	requestEvents['success'] = request.addEventListener('success', function (event) {
-	// 		var db = event.target.result;
-	// 		deferred.resolve(db);
-	// 	});
-
-	// 	requestEvents['upgradeneeded'] = request.addEventListener('upgradeneeded', function (event) {
-	// 		var db = event.target.result;
-	// 		// where does db upgrade code go?
-	// 		handleUpgrade(db);			
-	// 	});
-	// 	return deferred.promise;
-	// };
-
-	// var read = function (db, objectStoreName) {
-	// 	var objectStore = db.transaction(database).objectStore(objectStoreName);
-	// 	// tk
-	// }
-
-
-	return serviceInstance;
-	}])
-});
-
-
-partialDerp.controller('cacheController', function ($scope, indexedDBService) {
-
-	$scope.workingTest = "yup this shit fucking works";
-});*/
-
 var pong = angular.module('pong', []);
 	pong.factory('d3Service', ['$document', '$q', '$rootScope',
 		function ($document, $q, $rootScope) {
@@ -96,15 +41,15 @@ pong.directive('barChart', ['d3Service', function (d3Service) {
 			template: '<p>{{gameLabel}}</p>',
 
 			link: function (scope, element, attrs) {
-				var height = 50;
-				var width = 500;
+				var height = 60;
+				var width = 90;
 
 				var dataset = [
-					{game_id: 0, wins: 10, losses: 5},
-					{game_id: 1, wins: 0, losses: 3},
+					{game_id: 1, wins: 10, losses: 5},
+					{game_id: 1, wins: 4, losses: 3},
 					{game_id: 2, wins: 10, losses: 8},
 					{game_id: 3, wins: 3, losses: 1},
-					{game_id: 4, wins: 5, losses: 0},
+					{game_id: 4, wins: 5, losses: 4},
 					{game_id: 5, wins: 1, losses: 15},
 					{game_id: 6, wins: 17, losses: 3},
 					{game_id: 7, wins: 14, losses: 5}
@@ -137,7 +82,8 @@ pong.directive('barChart', ['d3Service', function (d3Service) {
 								// wins
 								groups.append('rect')
 									.attr('x', function (d, i) {
-										return i * width / dataset.length;
+										var barWidth = width / dataset.length;
+										return (i + .5) * barWidth;
 									})
 
 									.attr('y', function (d, i) {
