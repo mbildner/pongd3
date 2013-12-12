@@ -177,12 +177,19 @@ pong.factory('pongService', function() {
   return {PongGame: PongGame};
 });
 
-pong.directive('game', ['pongService', function(pongService) {
+pong.directive('game', ['pongService', function (pongService) {
   return {
     template: '<canvas width="200" height="200"></canvas>',
     link: function(scope, element, attrs) {
       var canvas = element.children()[0];
+
+      // new pong game initialized
       var game = new pongService.PongGame(canvas);
+      game.onGameOver = function () {
+
+        var lastGame = game.games[game.games.length-1];
+      }
+
     },
   };
 }]);
@@ -221,100 +228,119 @@ pong.directive('game', ['pongService', function(pongService) {
 		}]);
 
 
+
+
+
+pong.directive('pieChart', ['d3Service', function (d3Service) {
+	return {
+    link: function (scope, element, attrs) {
+
+    },
+    restrict: 'AE'
+	}
+}]);
+
+
+
+
 pong.directive('barChart', ['d3Service', function (d3Service) {
 		return {
-			// template: '<p>Add Game:<input ng-model="dataset.games">{{dataset.games}}.</input></p>',
+			// template: '<p>Add Game:<input ng-model="scope.dataset.games">{{scope.dataset.games}}.</input></p>',
 
 			link: function (scope, element, attrs) {
-
-				var height = attrs['h'];
-				var width = attrs['w'];
-
-				var dataset = [
-					{game_id: 1, wins: 10, losses: 5},
-					{game_id: 1, wins: 4, losses: 3},
-					{game_id: 2, wins: 10, losses: 8},
-					{game_id: 3, wins: 3, losses: 1},
-					{game_id: 4, wins: 5, losses: 4},
-					{game_id: 5, wins: 1, losses: 15},
-					{game_id: 6, wins: 17, losses: 3},
-					{game_id: 7, wins: 14, losses: 5}
-				];
+				var height = attrs.h;
+				var width = attrs.w;
 
 				d3Service.d3()
 					.then(function (d3) {
 
-						var barWidth = (width / dataset.length);
+            var maxBarHeight = d3.max(scope.dataset, function (column) {
+              return column.number;
+            });
 
-						var maxBarHeight = d3.max(dataset, function (game) {
-							return Math.max(game.wins, game.losses);
-						});
+            var barWidth = (width / scope.dataset.length);
 
-						var barHeightScale = d3.scale.linear()
-								.domain([0, maxBarHeight])
-								.range([0, height]);
+            var barHeightScale = d3.scale.linear()
+                .domain([0, maxBarHeight])
+                .range([0, height]);
+        
+            var svg = d3.select(element[0])
+              .append('svg')
+              .attr('height', height)
+              .attr('width', width);
 
+            var bars = svg.selectAll('rect')
+              .data(scope.dataset)
+                .enter()
+                .append('rect')
+                  .attr('x', function (d, i) {
+                    return i * barWidth;
+                  })
+                  .attr('y', function (d, i) {
+                    return height - barHeightScale(d.number);
+                  })
+                  .attr('width', barWidth)
+                  .attr('height', function (d, i) {
+                    return barHeightScale(d.number);
+                  })
+                  .style('fill', function (d, i) {
+                    if (d.name === 'wins') {
+                      return '#6495ED';
+                    } else if (d.name === 'losses') {
+                      return '#FF4500';
+                    }
+                  });
 
-						var svg = d3.select(element[0])
-							.append('svg')
-							.attr('height', height)
-							.attr('width', width);
+            var updateGraph = function (newDataSet) {
+              // console.log('updategraph called');
+              var maxBarHeight = d3.max(newDataSet, function (column) {
+                return column.number;
+              });
 
-						var groups = svg.selectAll('g')
-							.data(dataset)
-								.enter()
-								.append('g');
+              var barWidth = (width / newDataSet.length);
 
-						
-								// wins
-								groups.append('rect')
-									.attr('x', function (d, i) {
-										return i * barWidth;
-									})
+              var barHeightScale = d3.scale.linear()
+                  .domain([0, maxBarHeight])
+                  .range([0, height]);
 
-									.attr('y', function (d, i) {
-										var y = height - barHeightScale(d.wins);
-										return y;
-									})
-									.attr('width', function (d, i) {
-										return barWidth / 2;
-									})
-									.attr('height', function (d, i) {
-										var height = d.wins;
-										var scaledHeight = barHeightScale(height);
-										return scaledHeight;
-									})
-									.style('fill', function (d, i) {
-										var color = 'blue';
-										return color;
-									});
+              svg.selectAll('rect')
+                .data(newDataSet)
+                  .transition()
+                    .duration(100)
+                    .attr('height', function (d, i) {
+                      return barHeightScale(d.number);
+                    })
+                    .attr('y', function (d, i) {
+                    return height - barHeightScale(d.number);
+                  });
+            };
 
-									// losses
-									groups.append('rect')
-										.attr('x', function (d, i) {
-											return (i + .5) * barWidth;
-										})
-										.attr('y', function (d, i) {
-											var x = height - barHeightScale(d.losses);
-											return x;
-										})
-										.attr('width', function (d, i) {
-											return barWidth / 2;
-										})
-										.attr('height', function (d, i) {
-											return barHeightScale(d.losses);
-										})
-										.style('fill', function (d, i) {
-											var color = 'red';
-											return color;
-										});
+            // third argument true = deep watch on an array
+            scope.$watch('dataset', function (newdata) {               
+              updateGraph(newdata);
+            }, true);
 
-					});
+                
+          });
 			},
-			restrict: 'A'
+			restrict: 'AE'
 		};
 }]);
 
+
+pong.controller('statsController', function ($scope) {
+  $scope.dataset = [
+    {'name': 'wins', 'number':13  },
+    {'name': 'losses', 'number':6 }
+    ];
+
+  $scope.$watch('dataset', function (dataset) {
+    $scope.dataset = dataset;
+  });
+
+
+
+})
 
 
 
