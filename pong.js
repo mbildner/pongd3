@@ -185,14 +185,27 @@ pong.directive('game', ['pongService', function (pongService) {
 
       // new pong game initialized
       var game = new pongService.PongGame(canvas);
-      game.onGameOver = function () {
 
+      game.onGameOver = function () {
         var lastGame = game.games[game.games.length-1];
+        scope.games = game.games;
+
+        scope.$apply(function () {
+
+          if (lastGame.win) {
+            scope.dataset[0].number++;
+          } else {
+            scope.dataset[1].number++;
+          }          
+        });
       }
 
     },
   };
 }]);
+
+
+
 
 	pong.factory('d3Service', ['$document', '$q', '$rootScope',
 		function ($document, $q, $rootScope) {
@@ -228,6 +241,27 @@ pong.directive('game', ['pongService', function (pongService) {
 		}]);
 
 
+pong.directive('scatterPlot', ['d3Service', function (d3Service) {
+  return {
+    link: function (scope, element, attrs) {
+      d3Service.d3()
+        .then(function (d3) {
+
+          var width = attrs.width;
+          var height = attrs.height;
+          console.log(width, height);
+
+          var svg = d3.select(element[0]).append('svg')
+            .attr('height', height)
+            .attr('width', width);
+
+          console.log(scope.dataset);
+
+        })
+    }, 
+    restrict: 'EA'
+  }
+}]);
 
 
 
@@ -235,27 +269,91 @@ pong.directive('pieChart', ['d3Service', function (d3Service) {
 	return {
     link: function (scope, element, attrs) {
 
+      var height = attrs.height;
+      var width = attrs.width;
+
+      var r = Math.min(width, height) / 2;
+
+      d3Service.d3()
+        .then(function (d3) {
+
+         var colors = {
+           win: '#6495ED',
+           loss: '#FF4500'
+         };
+
+         var pie = d3.layout.pie()
+          .sort(null)
+            .value(function (d) {
+              return d.number;
+            });
+
+          var arc = d3.svg.arc()
+            .innerRadius(r/2)
+            .outerRadius(r);
+
+          var svg = d3.select(element[0]).append('svg')
+            .attr('width', width)
+            .attr('height', height)
+            .append('g')
+            .attr('transform', 'translate(' + width / 2 + ', ' + height / 2 + ')');
+
+          var path = svg.selectAll('path')
+            .data(pie(scope.dataset))
+            .enter()
+              .append('path')
+              .attr('fill', function (d, i) {
+                if (d.data.name==='wins') {
+                  return colors.win;
+                } else if (d.data.name==='losses') {
+                  return colors.loss;
+                }
+              })
+              .attr('d', arc);   
+
+        var updateGraph = function (dataset) {
+          svg.selectAll('path')
+            .data(pie(dataset))
+              .transition()
+              .duration(100)
+                .attr('d', arc);
+        };
+
+        scope.$watch('dataset', function (newdata) {               
+          updateGraph(newdata);
+        }, true);
+
+        });
+
+                  
     },
     restrict: 'AE'
 	}
 }]);
-
-
-
 
 pong.directive('barChart', ['d3Service', function (d3Service) {
 		return {
 			// template: '<p>Add Game:<input ng-model="scope.dataset.games">{{scope.dataset.games}}.</input></p>',
 
 			link: function (scope, element, attrs) {
-				var height = attrs.h;
-				var width = attrs.w;
+
+        var colors = {
+          win: '#6495ED',
+          loss: '#FF4500'
+        };
+
+				var height = attrs.height;
+				var width = attrs.width;
 
 				d3Service.d3()
 					.then(function (d3) {
 
             var maxBarHeight = d3.max(scope.dataset, function (column) {
+              // d3 sorts by natural, not numerical order, make sure we're sorting numbers, not strings.
+              // return valueOf(column.number);
               return column.number;
+
+
             });
 
             var barWidth = (width / scope.dataset.length);
@@ -285,14 +383,13 @@ pong.directive('barChart', ['d3Service', function (d3Service) {
                   })
                   .style('fill', function (d, i) {
                     if (d.name === 'wins') {
-                      return '#6495ED';
+                      return colors.win;
                     } else if (d.name === 'losses') {
-                      return '#FF4500';
+                      return colors.loss;
                     }
                   });
 
             var updateGraph = function (newDataSet) {
-              // console.log('updategraph called');
               var maxBarHeight = d3.max(newDataSet, function (column) {
                 return column.number;
               });
@@ -330,9 +427,10 @@ pong.directive('barChart', ['d3Service', function (d3Service) {
 
 pong.controller('statsController', function ($scope) {
   $scope.dataset = [
-    {'name': 'wins', 'number':13  },
-    {'name': 'losses', 'number':6 }
+    {'name': 'wins', 'number':12  },
+    {'name': 'losses', 'number':15 }
     ];
+
 
   $scope.$watch('dataset', function (dataset) {
     $scope.dataset = dataset;
